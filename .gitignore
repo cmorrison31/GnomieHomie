@@ -28,9 +28,10 @@ wheels/
 # PyCharm
 .idea/
 
-# Installer logs
+# Logs
 pip-log.txt
 pip-delete-this-directory.txt
+*.log
 
 # virtualenv
 .venv
