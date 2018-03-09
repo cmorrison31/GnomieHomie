@@ -19,6 +19,7 @@ class GnomieHomie:
         self.config = configparser.ConfigParser()
 
         self.load_config(config_path)
+        self.config_path = config_path
 
         @self.client.event
         async def on_ready():
@@ -44,6 +45,7 @@ class GnomieHomie:
             heart_beat_task.cancel()
             loop.run_until_complete(self.client.logout())
             loop.close()
+            self.config.write(self.config_path)
 
         logger.exception('The bot is terminating.')
 
@@ -54,8 +56,11 @@ class GnomieHomie:
 
     def load_config(self, config_file_path):
         # Set default values
-        self.config['heart beat'] = {'channel': '', 'time': '3600'}
+        self.config['heart beat'] = {'message id': '', 'channel': '',
+                                     'time': '3600'}
         self.config['credentials'] = {'key': ''}
+        self.config['dice rolls'] = {'max dice size': '100',
+                                     'max number of rolls': '10'}
 
         # Load and parse the actual config file
         self.config.read(config_file_path)
@@ -65,18 +70,30 @@ class GnomieHomie:
 
         channel = self.client.get_channel(self.config['heart beat']['channel'])
 
+        message_id = self.config['heart beat']['message id']
+
         while True:
-            # Look for existing heart beat messages
-            async for message in self.client.logs_from(channel,
-                                                       limit=sys.maxsize):
-                if message.author.id == self.client.connection.user.id:
-                    await self.client.delete_message(message)
-
             message_text = 'Heart Beat: ' + \
-                           datetime.strftime(datetime.now(),
-                                             '%Y-%m-%d %H:%M:%S')
+                           datetime.strftime(datetime.utcnow(),
+                                             '%Y-%m-%d %H:%M:%S UTC')
 
-            await self.client.send_message(channel, message_text)
+            # If we don't have an existing ID we need to create a new message
+            if len(message_id) == 0:
+                message = await self.client.send_message(channel, message_text)
+                message_id = message.id
+                self.config['heart beat']['message id'] = message_id
+            else:
+                try:
+                    message = await self.client.get_message(channel,
+                                                            message_id)
+                except (discord.NotFound, discord.Forbidden):
+                    # Either the ID is wrong or we don't have permission for
+                    # message ID we were passed. Either way we restart the
+                    # loop with a bland ID to trigger creating a new message
+                    message_id = ''
+                    continue
+
+                await self.client.edit_message(message, message_text)
 
             await asyncio.sleep(int(self.config['heart beat']['time']))
 
@@ -86,6 +103,9 @@ class GnomieHomie:
         dice = 6  # default dice size
         num_rolls = 1  # default number of rolls
         message_text = '{!s}\n'.format(message.author.mention)
+
+        max_rolls = self.config.getint('dice rolls', 'max number of rolls')
+        max_dice_size = self.config.getint('dice rolls', 'max dice size')
 
         # If user supplied data exits, parse it and try to get the dice size
         # and number of requested rolls
@@ -104,15 +124,16 @@ class GnomieHomie:
                 return
 
         # Valid the user input and provide feedback if necessary
-        if num_rolls <= 0 or num_rolls > 10:
+        if num_rolls <= 0 or num_rolls > max_rolls:
             message_text += 'The number of rolls specified must be greater ' \
-                            'than 0 and less than 11.'
+                            'than 0 and less than {:.0f}.'\
+                .format(max_rolls + 1)
             await self.client.send_message(message.channel, message_text)
             return
 
-        if dice < 2 or dice > 100:
+        if dice < 2 or dice > max_dice_size:
             message_text += 'The dice size specified must be greater than 1 ' \
-                            'and less than 101.'
+                            'and less than {:.0f}.'.format(max_dice_size + 1)
             await self.client.send_message(message.channel, message_text)
             return
 
