@@ -5,7 +5,6 @@ import os
 import random
 import sys
 from datetime import datetime
-from discord.ext import commands
 
 import discord
 
@@ -14,7 +13,6 @@ class GnomieHomie:
     def __init__(self, config_path='config.ini'):
         self.client = discord.Client()
         self.config = configparser.ConfigParser()
-        self.client = commands.Bot(command_prefix='?', description='blah')
 
         self.load_config(config_path)
 
