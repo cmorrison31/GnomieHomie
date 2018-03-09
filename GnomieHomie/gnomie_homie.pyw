@@ -74,7 +74,7 @@ class GnomieHomie:
 
             await self.client.send_message(channel, message_text)
 
-            await asyncio.sleep(int(self.config['heart beat']['channel']))
+            await asyncio.sleep(int(self.config['heart beat']['time']))
 
     async def process_roll(self, message):
         data = message.content.strip().split()
