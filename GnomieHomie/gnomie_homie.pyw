@@ -7,7 +7,6 @@ import configparser
 import logging
 import os
 import random
-import sys
 from datetime import datetime
 
 import discord
@@ -165,7 +164,7 @@ if __name__ == '__main__':
     # Setup logging
     logger = logging.getLogger('discord')
     logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler(filename='test_bot.log', encoding='utf-8',
+    handler = logging.FileHandler(filename='gnomie_homie.log', encoding='utf-8',
                                   mode='a')
     handler.setFormatter(
         logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
