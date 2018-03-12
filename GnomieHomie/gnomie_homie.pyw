@@ -92,10 +92,7 @@ class GnomieHomie:
                     message_id = ''
                     continue
 
-                await self.client.delete_message(message)
-                message = await self.client.send_message(channel, message_text)
-                message_id = message.id
-                self.config['heart beat']['message id'] = message_id
+                    await self.client.edit_message(message, message_text)
 
             await asyncio.sleep(int(self.config['heart beat']['time']))
 
