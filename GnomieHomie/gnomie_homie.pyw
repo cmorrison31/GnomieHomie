@@ -19,7 +19,8 @@ class GnomieHomie:
 
         self.load_config(config_path)
         self.config_path = config_path
-        self.server = self.config['server']['server id']
+        self.server = None
+
 
         @self.client.event
         async def on_ready():
@@ -27,6 +28,8 @@ class GnomieHomie:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
+            self.server = self.client.get_server(
+                self.config['server']['server id'])
 
         @self.client.event
         async def on_member_join(member):

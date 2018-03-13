@@ -38,6 +38,8 @@ async def adjust_nicknames(client, server, _):
                 number += 1
             except discord.Forbidden:
                 continue
+        else:
+            number += 1
 
 
 async def get_valid_name(name):
