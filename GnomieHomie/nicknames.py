@@ -1,4 +1,3 @@
-import logging
 import re
 import sys
 
@@ -7,45 +6,55 @@ import discord
 
 async def adjust_nicknames(client, server, _):
     """
-    :param discord.Client client:
-    :param discord.Server server:
-    :param discord.Member _:
-    :return:
+    Adjusts the nicknames of all server members to adhere to the bracketed ID
+    rules.
+
+    :param discord.Client client: Current client object
+    :param discord.Server server: Server currently being used
+    :param discord.Member _: Member triggered this function (unused)
+    :return: None
     """
 
-    members = []
+    members_data = []
 
-    for mem in server.members:
-        if mem.nick is not None:
-            name = mem.nick
-        else:
-            name = mem.name
+    for member in server.members:
+        name = member.nick if member.nick is not None else member.name
 
         name = await get_valid_name(name)
 
         number = await get_number(name)
 
-        members.append((mem, name, number))
+        members_data.append((member, name, number, member != server.owner))
 
-    members = sorted(members, key=lambda x: x[2])
+    # We add an additional boolean field here which is True if the member is
+    # not the server owner. This ensures that the server owner is given ID
+    # priority (e.g. sorted first) in the member list. Bot's cannot change the
+    # owner's ID, so this field ensures the owner's ID will almost never need
+    # to change.
+    members_data = sorted(members_data,
+                          key=lambda member_data: (member_data[2],
+                                                   member_data[3]))
 
-    number = 1
-    for (mem, name, num) in members:
-        if num != number:
-            new_nick = name[0:name.find('[')] + ' [{:.0f}]'.format(number)
+    correct_id = 1
+    for (member, name, current_id, _) in members_data:
+        if current_id != correct_id:
+            new_nick = name[0:name.find('[')].strip() \
+                       + ' [{:.0f}]'.format(correct_id)
             try:
-                await client.change_nickname(mem, new_nick)
-                number += 1
+                await client.change_nickname(member, new_nick)
+                correct_id += 1
             except discord.Forbidden:
                 continue
         else:
-            number += 1
+            correct_id += 1
 
 
 async def get_valid_name(name):
     """
-    :param str name:
-    :return:
+    Parses the input name and returns a valid name according to the ID rules.
+
+    :param str name: Member name
+    :return: str
     """
 
     name = name.strip()
@@ -66,8 +75,11 @@ async def get_valid_name(name):
 
 async def get_number(name):
     """
-    :param str name:
-    :return:
+    Parses the input name and extracts the ID or returns sys.maxsize if there
+    was no ID.
+
+    :param str name: Member name
+    :return: int
     """
 
     match = re.search(r'\[(\d+)\]', name)

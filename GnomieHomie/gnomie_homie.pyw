@@ -79,6 +79,7 @@ class GnomieHomie:
         self.config['heart beat'] = {'message id': '', 'channel': '',
                                      'time': '3600'}
         self.config['credentials'] = {'key': ''}
+        self.config['server'] = {'server id': ''}
         self.config['dice rolls'] = {'max dice size': '100',
                                      'max number of rolls': '10'}
 

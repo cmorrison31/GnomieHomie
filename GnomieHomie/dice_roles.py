@@ -3,6 +3,18 @@ import random
 
 
 async def process_roll(client, message, max_rolls, max_dice_size):
+    """
+    Takes a command of the form "/roll [*d*size] [number of rolls]" and
+    simulates the dice roll of the specified size for the specified number of
+    rolls. The result is posted as a message in the same channel as the command.
+
+    :param discord.Client client:
+    :param discord.Message message:
+    :param int max_rolls:
+    :param int max_dice_size:
+    :return: None
+    """
+
     data = message.content.strip().split()
 
     dice = 6  # default dice size
