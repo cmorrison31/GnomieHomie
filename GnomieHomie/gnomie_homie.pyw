@@ -5,6 +5,7 @@
 import asyncio
 import configparser
 import logging
+from asyncio import Lock
 from datetime import datetime
 
 import discord
@@ -23,6 +24,7 @@ class GnomieHomie:
         self.config_path = config_path
         self.server = None
         self.active_players = set()
+        self.nick_lock = Lock()
 
         @self.client.event
         async def on_ready():
@@ -32,6 +34,8 @@ class GnomieHomie:
             print('------')
             self.server = self.client.get_server(
                 self.config['server']['server id'])
+            await self.update_active_players()
+            print('Updated active players')
 
         @self.client.event
         async def on_member_join(member):
@@ -44,7 +48,9 @@ class GnomieHomie:
 
         @self.client.event
         async def on_member_update(_, member_new):
+            await self.nick_lock.acquire()
             await adjust_nicknames(self, member_new)
+            await self.nick_lock.release()
 
         @self.client.event
         async def on_message(message):
@@ -145,7 +151,8 @@ if __name__ == '__main__':
     # Setup logging
     logger = logging.getLogger('discord')
     logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler(filename='gnomie_homie.log', encoding='utf-8',
+    handler = logging.FileHandler(filename='gnomie_homie.log',
+                                  encoding='utf-8',
                                   mode='a')
     handler.setFormatter(
         logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
