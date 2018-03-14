@@ -21,7 +21,6 @@ class GnomieHomie:
         self.config_path = config_path
         self.server = None
 
-
         @self.client.event
         async def on_ready():
             print('Logged in as')
