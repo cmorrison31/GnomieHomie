@@ -8,22 +8,23 @@ from datetime import datetime
 import discord
 
 
-async def get_active_players(client, start_date=datetime(1970, 1, 1)):
+async def get_active_players(bot, start_date=datetime(1970, 1, 1)):
     """
     Returns a list of active users and list of inactive users. Active users are
     users who have made at least one post since the start of the game.
 
-    :param discord.Client client: Current client object
+    :param GnomieHomie bot: Current bot object
     :param datetime start_date: Starting date for the game
     :return: set(discord.Member)
     """
 
     active_users = set()
 
-    for channel in client.get_all_channels():
-        async for message in client.logs_from(channel, limit=sys.maxsize,
-                                              after=start_date):
-            active_users.add(message.author)
+    for channel in bot.server.channels:
+        async for message in bot.client.logs_from(channel, limit=sys.maxsize,
+                                                  after=start_date):
+            if message.author in bot.server.members:
+                active_users.add(message.author)
 
     return active_users
 

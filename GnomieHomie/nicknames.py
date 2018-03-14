@@ -8,6 +8,47 @@ import sys
 import discord
 
 
+async def get_current_numbers(bot, excluding=None):
+    numbers = []
+
+    for player in bot.active_players:
+        if excluding is not None and player == excluding:
+            continue
+        name = player.nick if player.nick is not None else ''
+        numbers.append(await get_number(name))
+
+    return numbers
+
+
+async def valid_nick_change(bot, member_old, member_new):
+    # Check if we're adding a brand new nickname
+    if member_old.nick is None and member_new.nick is not None:
+        return True
+
+    # Check if we're removing a nickname
+    if member_old.nick is not None and member_new.nick is None:
+        return False
+
+    # Check if the new nickname is valid
+    if await get_valid_name(member_new.nick) != member_new.nick:
+        return False
+
+    number_new = await get_number(member_new.nick)
+    number_old = await get_number(member_old.nick)
+
+    # Check if the number was left the same
+    if number_old == number_new and number_old != sys.maxsize:
+        return True
+
+    if number_old != number_new and number_old != sys.maxsize:
+        numbers = await get_current_numbers(bot, member_new)
+
+        if number_new in numbers:
+            return False
+
+    return True
+
+
 async def adjust_nicknames(bot, instigating_member):
     """
     Adjusts the nicknames of all server members to adhere to the bracketed ID
@@ -51,7 +92,7 @@ async def adjust_nicknames(bot, instigating_member):
     correct_id = 1
     for (member, name, current_id, owner, trig_mem) in members_data:
         if current_id != correct_id:
-            new_nick = name[0:name.find('[')].strip() \
+            new_nick = name[0:name.rfind('[')].strip() \
                        + ' [{:.0f}]'.format(correct_id)
             try:
                 await bot.client.change_nickname(member, new_nick)

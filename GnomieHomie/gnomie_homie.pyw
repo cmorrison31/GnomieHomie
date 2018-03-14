@@ -12,7 +12,7 @@ import discord
 
 import members
 from dice_roles import process_roll
-from nicknames import adjust_nicknames
+from nicknames import adjust_nicknames, valid_nick_change
 
 
 class GnomieHomie:
@@ -47,10 +47,20 @@ class GnomieHomie:
             await adjust_nicknames(self, member)
 
         @self.client.event
-        async def on_member_update(_, member_new):
-            await self.nick_lock.acquire()
-            await adjust_nicknames(self, member_new)
-            await self.nick_lock.release()
+        async def on_member_update(member_old, member_new):
+            if await valid_nick_change(self, member_old, member_new):
+                await self.nick_lock.acquire()
+                await adjust_nicknames(self, member_new)
+                self.nick_lock.release()
+            else:
+                try:
+                    await self.nick_lock.acquire()
+                    await self.client.change_nickname(member_new,
+                                                      member_old.nick)
+                except discord.Forbidden:
+                    pass
+                finally:
+                    self.nick_lock.release()
 
         @self.client.event
         async def on_message(message):
@@ -72,7 +82,7 @@ class GnomieHomie:
     async def update_active_players(self):
         start_date = datetime.strptime(self.config['game']['start date'],
                                        '%Y-%m-%d')
-        self.active_players = await members.get_active_players(self.client,
+        self.active_players = await members.get_active_players(self,
                                                                start_date)
 
     def run(self):
