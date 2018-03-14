@@ -22,6 +22,10 @@ async def adjust_nicknames(client, server, _):
     members_data = []
 
     for member in server.members:
+        # Skip the bot
+        if client.connection.user == member:
+            continue
+        
         name = member.nick if member.nick is not None else member.name
 
         name = await get_valid_name(name)
