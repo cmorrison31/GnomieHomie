@@ -6,8 +6,8 @@ import asyncio
 import configparser
 import logging
 from datetime import datetime
-from GnomieHomie.dice_roles import process_roll
-from GnomieHomie.nicknames import adjust_nicknames
+from dice_roles import process_roll
+from nicknames import adjust_nicknames
 
 import discord
 
