@@ -26,3 +26,21 @@ async def get_active_players(client, start_date=datetime(1970, 1, 1)):
             active_users.add(message.author)
 
     return active_users
+
+
+async def print_active_players(bot, channel):
+    """
+    Prints a list of the active players in the specified channel
+
+    :param GnomieHomie bot: Current bot object
+    :param discord.Channel channel: Channel to post in
+    :return: None
+    """
+
+    message_text = 'These are the current players:\n'
+
+    for user in bot.active_players:
+        message_text += user.name + '\n'
+
+    await bot.client.send_message(channel, message_text)
+

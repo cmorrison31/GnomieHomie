@@ -9,8 +9,8 @@ from datetime import datetime
 
 import discord
 
+import members
 from dice_roles import process_roll
-from members import get_active_players
 from nicknames import adjust_nicknames
 
 
@@ -60,10 +60,14 @@ class GnomieHomie:
                 await process_roll(self.client, message, max_rolls,
                                    max_dice_size)
 
+            if message.content.strip().startswith('/active_players'):
+                await members.print_active_players(self, message.channel)
+
     async def update_active_players(self):
         start_date = datetime.strptime(self.config['game']['start date'],
                                        '%Y-%m-%d')
-        self.active_players = await get_active_players(self.client, start_date)
+        self.active_players = await members.get_active_players(self.client,
+                                                               start_date)
 
     def run(self):
         loop = asyncio.get_event_loop()
