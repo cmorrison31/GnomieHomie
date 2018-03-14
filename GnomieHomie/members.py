@@ -39,8 +39,9 @@ async def print_active_players(bot, channel):
 
     message_text = 'These are the current players:\n'
 
-    for user in bot.active_players:
-        message_text += user.name + '\n'
+    for member in bot.active_players:
+        name = member.nick if member.nick is not None else member.name
+        message_text += name + '\n'
 
     await bot.client.send_message(channel, message_text)
 
