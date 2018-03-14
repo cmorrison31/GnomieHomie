@@ -6,10 +6,12 @@ import asyncio
 import configparser
 import logging
 from datetime import datetime
-from dice_roles import process_roll
-from nicknames import adjust_nicknames
 
 import discord
+
+from dice_roles import process_roll
+from members import get_active_players
+from nicknames import adjust_nicknames
 
 
 class GnomieHomie:
@@ -20,6 +22,7 @@ class GnomieHomie:
         self.load_config(config_path)
         self.config_path = config_path
         self.server = None
+        self.active_players = set()
 
         @self.client.event
         async def on_ready():
@@ -32,18 +35,23 @@ class GnomieHomie:
 
         @self.client.event
         async def on_member_join(member):
-            await adjust_nicknames(self.client, self.server, member)
+            await adjust_nicknames(self, member)
 
         @self.client.event
         async def on_member_remove(member):
-            await adjust_nicknames(self.client, self.server, member)
+            await self.update_active_players()
+            await adjust_nicknames(self, member)
 
         @self.client.event
         async def on_member_update(_, member_new):
-            await adjust_nicknames(self.client, self.server, member_new)
+            await adjust_nicknames(self, member_new)
 
         @self.client.event
         async def on_message(message):
+            if message.author not in self.active_players:
+                await self.update_active_players()
+                await adjust_nicknames(self, message.author)
+
             if message.content.strip().startswith('/roll'):
                 max_rolls = self.config.getint('dice rolls',
                                                'max number of rolls')
@@ -51,6 +59,11 @@ class GnomieHomie:
                                                    'max dice size')
                 await process_roll(self.client, message, max_rolls,
                                    max_dice_size)
+
+    async def update_active_players(self):
+        start_date = datetime.strptime(self.config['game']['start date'],
+                                       '%Y-%m-%d')
+        self.active_players = await get_active_players(self.client, start_date)
 
     def run(self):
         loop = asyncio.get_event_loop()
@@ -81,6 +94,7 @@ class GnomieHomie:
         self.config['server'] = {'server id': ''}
         self.config['dice rolls'] = {'max dice size': '100',
                                      'max number of rolls': '10'}
+        self.config['game'] = {'start date': '1970-01-01'}
 
         # Load and parse the actual config file
         self.config.read(config_file_path)

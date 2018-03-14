@@ -8,31 +8,34 @@ import sys
 import discord
 
 
-async def adjust_nicknames(client, server, _):
+async def adjust_nicknames(bot, _):
     """
     Adjusts the nicknames of all server members to adhere to the bracketed ID
     rules.
 
-    :param discord.Client client: Current client object
-    :param discord.Server server: Server currently being used
+    :param GnomieHomie bot: Current bot object
     :param discord.Member _: Member triggered this function (unused)
     :return: None
     """
 
     members_data = []
 
-    for member in server.members:
+    for member in bot.server.members:
         # Skip the bot
-        if client.connection.user == member:
+        if bot.client.connection.user == member:
             continue
-        
+
+        # Skip inactive players
+        if member not in bot.active_players:
+            continue
+
         name = member.nick if member.nick is not None else member.name
 
         name = await get_valid_name(name)
 
         number = await get_number(name)
 
-        members_data.append((member, name, number, member != server.owner))
+        members_data.append((member, name, number, member != bot.server.owner))
 
     # We add an additional boolean field here which is True if the member is
     # not the server owner. This ensures that the server owner is given ID
@@ -49,7 +52,7 @@ async def adjust_nicknames(client, server, _):
             new_nick = name[0:name.find('[')].strip() \
                        + ' [{:.0f}]'.format(correct_id)
             try:
-                await client.change_nickname(member, new_nick)
+                await bot.client.change_nickname(member, new_nick)
                 correct_id += 1
             except discord.Forbidden:
                 continue
