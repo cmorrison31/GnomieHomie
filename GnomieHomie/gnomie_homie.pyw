@@ -38,10 +38,6 @@ class GnomieHomie:
             print('Updated active players')
 
         @self.client.event
-        async def on_member_join(member):
-            await adjust_nicknames(self, member)
-
-        @self.client.event
         async def on_member_remove(member):
             await self.update_active_players()
             await adjust_nicknames(self, member)
