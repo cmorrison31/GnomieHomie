@@ -18,13 +18,16 @@ async def get_active_players(bot, start_date=datetime(1970, 1, 1)):
     :return: set(discord.Member)
     """
 
-    active_users = set()
+    active_users = {}
 
     for channel in bot.server.channels:
         async for message in bot.client.logs_from(channel, limit=sys.maxsize,
                                                   after=start_date):
             if message.author in bot.server.members:
-                active_users.add(message.author)
+                timestamp = message.timestamp
+                if message.author not in active_users or \
+                        timestamp > active_users[message.author]:
+                    active_users[message.author] = timestamp
 
     return active_users
 
@@ -38,11 +41,44 @@ async def print_active_players(bot, channel):
     :return: None
     """
 
-    message_text = 'These are the current players:\n'
+    message_text = 'These are the current active players:\n'
 
-    for member in bot.active_players:
+    for member, last_active in bot.active_players.items():
         name = member.nick if member.nick is not None else member.name
-        message_text += name + '\n'
+        message_text += name + ', last active: ' + \
+                        datetime.strftime(last_active, '%Y-%m-%d %H:%M:%S') + \
+                        '\n'
 
     await bot.client.send_message(channel, message_text)
 
+
+async def print_inactive_players(bot, channel):
+    """
+    Prints a list of the inactive players in the specified channel
+
+    :param GnomieHomie bot: Current bot object
+    :param discord.Channel channel: Channel to post in
+    :return: None
+    """
+
+    message_text = 'These are the current inactive players:\n'
+
+    for member in bot.server.members:
+        if member not in bot.active_players:
+            name = member.nick if member.nick is not None else member.name
+            message_text += name + '\n'
+
+    await bot.client.send_message(channel, message_text)
+
+
+async def print_all_players(bot, channel):
+    """
+    Prints a list of the inactive and active players in the specified channel
+
+    :param GnomieHomie bot: Current bot object
+    :param discord.Channel channel: Channel to post in
+    :return: None
+    """
+
+    await print_active_players(bot, channel)
+    await print_inactive_players(bot, channel)

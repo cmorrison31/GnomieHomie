@@ -23,7 +23,7 @@ class GnomieHomie:
         self.load_config(config_path)
         self.config_path = config_path
         self.server = None
-        self.active_players = set()
+        self.active_players = {}
         self.nick_lock = Lock()
 
         @self.client.event
@@ -72,8 +72,14 @@ class GnomieHomie:
                 await process_roll(self.client, message, max_rolls,
                                    max_dice_size)
 
+            if message.content.strip().startswith('/all_players'):
+                await members.print_all_players(self, message.channel)
+
             if message.content.strip().startswith('/active_players'):
                 await members.print_active_players(self, message.channel)
+
+            if message.content.strip().startswith('/inactive_players'):
+                await members.print_inactive_players(self, message.channel)
 
     async def update_active_players(self):
         start_date = datetime.strptime(self.config['game']['start date'],
